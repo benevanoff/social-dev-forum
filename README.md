@@ -30,7 +30,7 @@ To run the application, use `dotnet run`.
 A user should be able to create a new post with the following features:
 
 * A post subject
-* A test body for the post
+* A text body for the post
 
 To accomplish this, we will need to be able to accept form submissions over the web (REST API on the backend with a frontend form). The frontend will connect to the backed by making an API call to the backend, containing the form page input data.
 
