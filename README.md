@@ -4,9 +4,26 @@
 
 The goal is to create a social forum where amateur and professional devs can collaborrate on a social platform.
 
-### Forum Service
+## Forum Service
 
 The forum service should be able to accept new posts and store them persistently so that they can be viewed by website visitors or other forum members.
+
+### Installation
+
+#### Dependencies
+
+* git (https://github.com/git-guides/install-git)
+* C# ASP.NET 9 (https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+
+#### Instructions
+
+First, clone this repository `git clone https://github.com/benevanoff/social-dev-forum.git`.
+
+Navigate to the root directory of this git project, `social-dev-forum/`.
+
+To run the application, use `dotnet run`.
+
+### Technical Design
 
 #### Forum Post Creation
 
@@ -70,7 +87,7 @@ RESPONSE
 [
  {
    "id": 1,
-   "subject": "I made this app!
+   "subject": "I made this app!"
  }
 ]
 ```
