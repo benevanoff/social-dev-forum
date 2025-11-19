@@ -1,10 +1,4 @@
-# Social Dev Forum
-
-## What is this ?
-
-The goal is to create a social forum where amateur and professional devs can collaborrate on a social platform.
-
-## Forum Service
+## Forum Service Backend
 
 The forum service should be able to accept new posts and store them persistently so that they can be viewed by website visitors or other forum members.
 
