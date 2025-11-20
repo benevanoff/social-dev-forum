@@ -1,4 +1,5 @@
 import os
+import json
 import copy
 import uuid
 import redis
@@ -69,6 +70,20 @@ def hash_password(password):
 def root():
     return "User service"
 
+# User Registration/Creation Route
+class RegistrationRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+@app.post("/users/register")
+async def user_register(request:RegistrationRequest, rds_client=Depends(get_db)):
+    async with rds_client.cursor() as cur:
+        await cur.execute("""
+            INSERT IGNORE INTO users (username, email, password)
+                VALUES (%s, %s, %s)
+        """, (request.username, request.email, hash_password(request.password)))
+    
+
 # User Login Route
 class LoginRequest(BaseModel):
     username: str
@@ -91,3 +106,25 @@ async def user_login(request:LoginRequest, response:Response, rds_client=Depends
     session_id = session_storage.makeNewUserSession(request.username)
     # return session id in response body and cookie
     response.set_cookie(key="session_id", value=session_id)
+
+@app.post("/users/logout")
+async def users_logout(response:Response, session_id:str=Cookie(None), session_storage=Depends(get_sessions)):
+    # destroy sessioroutern by deleting session entry from Redis
+    if not session_id:
+        return
+    session_storage.session_storage_client.delete(session_id)
+    # and deleting the session cookie from the client
+    response.delete_cookie(key="session_id")
+
+@app.get("/users/whoami")
+async def users_whoami(session_id:str=Cookie(None), rds_client=Depends(get_db), session_storage=Depends(get_sessions)):
+    if not session_id:
+        return
+    username = session_storage.getUserFromSession(session_id)
+    async with rds_client.cursor() as cur:
+        await cur.execute("""
+            SELECT username, email
+            FROM users
+            WHERE username = %s
+            """, (username))
+    return await cur.fetchone()

@@ -20,7 +20,7 @@ docker run -p 3306:3306 mysql
 A Redis server is used to store ephemeral user sessions.
 
 ```
-docker run redis:alpine redis-server --requirepass yourpasswordkkfkfa
+docker run -p 6379:6379 redis:alpine redis-server --requirepass yourpasswordkkfkfa
 ```
 
 ### Python Server
