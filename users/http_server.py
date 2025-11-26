@@ -5,7 +5,7 @@ import uuid
 import redis
 import logging
 import aiomysql
-import nacl.hash
+import nacl.pwhash.argon2id
 from pydantic import BaseModel
 
 from fastapi import FastAPI, Request, Depends, HTTPException, Response, Cookie
@@ -60,11 +60,6 @@ def get_sessions():
     session_storage = UserSession()
     yield session_storage
 
-def hash_password(password):
-    SALT = "appsalt"
-    password + SALT
-    return nacl.hash.sha256(password.encode()).decode()
-
 # route handlers
 @app.get("/")
 def root():
@@ -81,8 +76,7 @@ async def user_register(request:RegistrationRequest, rds_client=Depends(get_db))
         await cur.execute("""
             INSERT IGNORE INTO users (username, email, password)
                 VALUES (%s, %s, %s)
-        """, (request.username, request.email, hash_password(request.password)))
-    
+        """, (request.username, request.email, nacl.pwhash.argon2id.str(request.password.encode('utf-8')).decode('utf-8')))
 
 # User Login Route
 class LoginRequest(BaseModel):
@@ -90,17 +84,20 @@ class LoginRequest(BaseModel):
     password: str
 @app.post("/users/login")
 async def user_login(request:LoginRequest, response:Response, rds_client=Depends(get_db), session_storage=Depends(get_sessions)):
-    # verify password is correct
-    # hash the input - the data is hashed in the database
-    hashed_password = hash_password(request.password)
-    # compare the hashes
+    # fetch encoded password and salt
     async with rds_client.cursor() as cur:
         await cur.execute("""
             SELECT * FROM users
-            WHERE (username, password) = (%s, %s)
-            """, (request.username, hashed_password))
+            WHERE (username) = (%s)
+            """, (request.username))
         user_result_row = await cur.fetchone()
+    # if the username isnt found - abort unauthorized
     if not user_result_row:
+        raise HTTPException(status_code=401)
+    # verify password is correct
+    try:
+        nacl.pwhash.argon2id.verify(user_result_row['password'].encode('utf-8'), request.password.encode('utf-8'))
+    except nacl.exceptions.InvalidkeyError:
         raise HTTPException(status_code=401)
     # add Redis entry {session_id:username} with 2 hour timeout
     session_id = session_storage.makeNewUserSession(request.username)

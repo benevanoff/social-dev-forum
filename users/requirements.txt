@@ -2,3 +2,5 @@ uvicorn
 fastapi
 aiomysql
 cryptography
+redis
+PyNaCl
